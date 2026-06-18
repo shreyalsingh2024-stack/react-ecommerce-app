@@ -16,4 +16,6 @@ A responsive e-commerce website that allows users to browse products, view detai
 - CSS
 - JavaScript
 
-netify link- https://scintillating-clafoutis-725b58.netlify.app/
+## Live Demo
+
+🔗 [View the website](https://scintillating-clafoutis-725b58.netlify.app/)
