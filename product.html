@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ShopEase — Product</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    .container { max-width: 1000px; margin: 36px auto; padding: 0 20px; }
+    .back-link { color: var(--muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px; cursor: pointer; }
+    .back-link:hover { color: var(--dark); }
+
+    .product-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; background: white; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); }
+    .product-img { width: 100%; height: 420px; object-fit: cover; display: block; }
+
+    .product-info { padding: 36px 36px 36px 0; display: flex; flex-direction: column; gap: 14px; }
+    .product-cat { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+    .product-name { font-size: 1.7rem; font-weight: 800; color: var(--dark); line-height: 1.2; }
+    .product-rating { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+    .stars { color: #f9ca24; font-size: 1.1rem; }
+    .product-price { font-size: 2rem; font-weight: 800; color: var(--red); }
+    .product-desc { color: #555; line-height: 1.7; font-size: 0.95rem; }
+
+    .qty-row { display: flex; align-items: center; gap: 14px; }
+    .qty-row label { font-weight: 600; font-size: 0.9rem; }
+    .qty-control { display: flex; align-items: center; gap: 0; border: 2px solid #e8e8e8; border-radius: 10px; overflow: hidden; }
+    .qty-control button { width: 38px; height: 38px; border: none; background: none; font-size: 1.1rem; cursor: pointer; transition: background 0.2s; }
+    .qty-control button:hover { background: #f0f0f0; }
+    .qty-control span { min-width: 40px; text-align: center; font-weight: 600; }
+
+    .action-row { display: flex; gap: 12px; margin-top: 8px; }
+    .stock-info { font-size: 0.85rem; padding: 8px 0; }
+    .stock-info.ok { color: var(--green); }
+    .stock-info.low { color: orange; }
+
+    .related { margin-top: 40px; }
+    .related h2 { font-size: 1.3rem; margin-bottom: 20px; color: var(--dark); }
+    .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .related-card { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s; }
+    .related-card:hover { transform: translateY(-3px); }
+    .related-card img { width: 100%; height: 150px; object-fit: cover; }
+    .related-card-info { padding: 12px; }
+    .related-card-info h4 { font-size: 0.9rem; color: var(--dark); margin-bottom: 4px; }
+    .related-card-info p { font-size: 0.95rem; color: var(--red); font-weight: 700; }
+
+    @media (max-width: 700px) {
+      .product-detail { grid-template-columns: 1fr; }
+      .product-info { padding: 24px; }
+      .product-img { height: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="shop.html" class="nav-logo"><i class="fa-solid fa-bag-shopping"></i> ShopEase</a>
+    <div class="nav-links">
+      <a href="shop.html"><i class="fa-solid fa-store"></i> <span>Shop</span></a>
+      <a href="cart.html" class="nav-cart"><i class="fa-solid fa-cart-shopping"></i> <span>Cart</span> <span id="cartBadge">0</span></a>
+      <a href="orders.html"><i class="fa-solid fa-box"></i> <span>Orders</span></a>
+      <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="back-link" onclick="history.back()">
+      <i class="fa-solid fa-arrow-left"></i> Back to Shop
+    </div>
+    <div id="productDetail"></div>
+    <div class="related" id="relatedSection" style="display:none">
+      <h2>You might also like</h2>
+      <div class="related-grid" id="relatedGrid"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+    updateCartBadge();
+
+    const params = new URLSearchParams(window.location.search);
+    const productId = parseInt(params.get("id"));
+    const product = PRODUCTS.find(p => p.id === productId);
+
+    if (!product) {
+      document.getElementById("productDetail").innerHTML = `
+        <div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h3>Product not found</h3><a href="shop.html" class="btn btn-primary">Back to Shop</a></div>`;
+    } else {
+      document.title = `ShopEase — ${product.name}`;
+      const stars = "★".repeat(Math.floor(product.rating)) + "☆".repeat(5 - Math.floor(product.rating));
+      const stockClass = product.stock <= 5 ? "low" : "ok";
+      const stockText = product.stock <= 5 ? `⚠ Only ${product.stock} left in stock!` : `✓ In Stock (${product.stock} available)`;
+
+      document.getElementById("productDetail").innerHTML = `
+        <div class="product-detail">
+          <img class="product-img" src="${product.image}" alt="${product.name}"/>
+          <div class="product-info">
+            <p class="product-cat">${product.category}</p>
+            <h1 class="product-name">${product.name}</h1>
+            <div class="product-rating">
+              <span class="stars">${stars}</span>
+              <span style="color:var(--muted)">${product.rating} out of 5</span>
+            </div>
+            <p class="product-price">₹${product.price}</p>
+            <p class="product-desc">${product.desc}</p>
+            <p class="stock-info ${stockClass}">${stockText}</p>
+            <div class="qty-row">
+              <label>Quantity:</label>
+              <div class="qty-control">
+                <button onclick="changeDetQty(-1)">−</button>
+                <span id="detQty">1</span>
+                <button onclick="changeDetQty(1)">+</button>
+              </div>
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" style="flex:2" onclick="handleAddToCart()">
+                <i class="fa-solid fa-cart-plus"></i> Add to Cart
+              </button>
+              <button class="btn btn-outline" id="wishBtn" onclick="handleWish()">
+                <i class="fa-${isWishlisted(product.id) ? 'solid' : 'regular'} fa-heart"></i>
+              </button>
+            </div>
+          </div>
+        </div>`;
+
+      // Related products
+      const related = PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+      if (related.length) {
+        document.getElementById("relatedSection").style.display = "block";
+        document.getElementById("relatedGrid").innerHTML = related.map(p => `
+          <div class="related-card" onclick="window.location.href='product.html?id=${p.id}'">
+            <img src="${p.image}" alt="${p.name}"/>
+            <div class="related-card-info">
+              <h4>${p.name}</h4>
+              <p>₹${p.price}</p>
+            </div>
+          </div>`).join("");
+      }
+    }
+
+    let qty = 1;
+    function changeDetQty(d) {
+      qty = Math.max(1, qty + d);
+      document.getElementById("detQty").textContent = qty;
+    }
+
+    function handleAddToCart() {
+      addToCart(product.id, qty);
+      showToast(`${qty}x ${product.name} added to cart!`, "success");
+    }
+
+    function handleWish() {
+      toggleWishlist(product.id);
+      const wished = isWishlisted(product.id);
+      document.getElementById("wishBtn").innerHTML = `<i class="fa-${wished ? 'solid' : 'regular'} fa-heart"></i>`;
+      showToast(wished ? "Added to wishlist!" : "Removed from wishlist");
+    }
+
+    function showToast(msg, type = "") {
+      const t = document.createElement("div");
+      t.className = `toast ${type}`;
+      t.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${msg}`;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+  </script>
+</body>
+</html>

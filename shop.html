@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ShopEase — Shop</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    .main { display: flex; max-width: 1300px; margin: 28px auto; padding: 0 20px; gap: 24px; }
+
+    /* Filters */
+    .filters { width: 220px; flex-shrink: 0; }
+    .filter-card { background: white; border-radius: var(--radius); padding: 22px 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
+    .filter-card h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 14px; }
+    .cat-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .cat-list li { padding: 9px 12px; border-radius: 10px; cursor: pointer; font-size: 0.92rem; color: #555; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+    .cat-list li:hover { background: #f0f0f0; }
+    .cat-list li.active { background: var(--dark); color: var(--accent); font-weight: 600; }
+    .cat-list li .count { font-size: 0.75rem; opacity: 0.7; }
+    #priceRange { width: 100%; accent-color: var(--dark); margin: 8px 0 4px; }
+    .price-label { font-size: 0.88rem; color: #555; }
+
+    /* Sort */
+    .sort-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .sort-bar select { padding: 8px 14px; border-radius: 10px; border: 2px solid #e8e8e8; font-size: 0.9rem; outline: none; cursor: pointer; }
+    .result-count { font-size: 0.9rem; color: var(--muted); }
+
+    /* Product Grid */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 20px; }
+
+    .product-card { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,0.12); }
+
+    .product-img-wrap { position: relative; }
+    .product-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+    .wish-btn { position: absolute; top: 10px; right: 10px; background: white; border: none; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-size: 1rem; transition: transform 0.2s; }
+    .wish-btn:hover { transform: scale(1.15); }
+    .wish-btn.active { color: var(--red); }
+
+    .product-info { padding: 14px 16px; flex: 1; }
+    .product-cat { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .product-name { font-size: 0.97rem; font-weight: 600; color: var(--dark); margin: 4px 0; line-height: 1.35; }
+    .product-rating { font-size: 0.82rem; color: #f9ca24; margin-bottom: 6px; }
+    .product-rating span { color: var(--muted); }
+    .product-price { font-size: 1.15rem; font-weight: 700; color: var(--red); }
+    .product-stock { font-size: 0.75rem; color: var(--green); margin-top: 3px; }
+    .product-stock.low { color: orange; }
+
+    .card-actions { padding: 0 14px 14px; display: flex; gap: 8px; }
+    .card-actions .btn { flex: 1; padding: 9px; font-size: 0.85rem; border-radius: 10px; justify-content: center; }
+
+    /* Search */
+    .search-wrap { flex: 1; max-width: 400px; position: relative; }
+    .search-wrap input { width: 100%; padding: 10px 16px 10px 40px; border-radius: 10px; border: none; background: rgba(255,255,255,0.12); color: white; font-size: 0.9rem; outline: none; }
+    .search-wrap input::placeholder { color: rgba(255,255,255,0.5); }
+    .search-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.5); }
+
+    @media (max-width: 768px) { .main { flex-direction: column; } .filters { width: 100%; } }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="shop.html" class="nav-logo"><i class="fa-solid fa-bag-shopping"></i> ShopEase</a>
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="searchInput" placeholder="Search products..."/>
+    </div>
+    <div class="nav-links">
+      <a href="shop.html" class="active"><i class="fa-solid fa-store"></i> <span>Shop</span></a>
+      <a href="cart.html" class="nav-cart"><i class="fa-solid fa-cart-shopping"></i> <span>Cart</span> <span id="cartBadge">0</span></a>
+      <a href="orders.html"><i class="fa-solid fa-box"></i> <span>Orders</span></a>
+      <div class="nav-user">Hi, <span id="userNameEl">--</span></div>
+      <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <!-- FILTERS -->
+    <aside class="filters">
+      <div class="filter-card">
+        <h3>Categories</h3>
+        <ul class="cat-list" id="catList">
+          <li class="active" data-cat="all">All Products <span class="count">15</span></li>
+          <li data-cat="electronics">Electronics <span class="count">4</span></li>
+          <li data-cat="clothing">Clothing <span class="count">4</span></li>
+          <li data-cat="books">Books <span class="count">3</span></li>
+          <li data-cat="home">Home & Kitchen <span class="count">2</span></li>
+          <li data-cat="sports">Sports <span class="count">2</span></li>
+        </ul>
+      </div>
+      <div class="filter-card">
+        <h3>Price Range</h3>
+        <input type="range" id="priceRange" min="0" max="2000" value="2000"/>
+        <p class="price-label">Up to ₹<span id="priceVal">2000</span></p>
+      </div>
+      <div class="filter-card">
+        <h3>Wishlist</h3>
+        <button class="btn btn-outline btn-sm btn-full" onclick="toggleWishlistFilter()" id="wishBtn">
+          <i class="fa-solid fa-heart"></i> Show Wishlist
+        </button>
+      </div>
+    </aside>
+
+    <!-- PRODUCTS -->
+    <section style="flex:1">
+      <div class="sort-bar">
+        <p class="result-count" id="resultCount"></p>
+        <select id="sortSelect">
+          <option value="default">Sort: Default</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating">Top Rated</option>
+        </select>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+
+    const user = getCurrentUser();
+    document.getElementById("userNameEl").textContent = user.name.split(" ")[0];
+    updateCartBadge();
+
+    let activeCat = "all", maxPrice = 2000, searchQ = "", showWishlist = false, sortBy = "default";
+
+    function renderProducts() {
+      let list = [...PRODUCTS];
+
+      if (showWishlist) list = list.filter(p => isWishlisted(p.id));
+      if (activeCat !== "all") list = list.filter(p => p.category === activeCat);
+      list = list.filter(p => p.price <= maxPrice);
+      list = list.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase()));
+
+      if (sortBy === "price-asc")  list.sort((a,b) => a.price - b.price);
+      if (sortBy === "price-desc") list.sort((a,b) => b.price - a.price);
+      if (sortBy === "rating")     list.sort((a,b) => b.rating - a.rating);
+
+      document.getElementById("resultCount").textContent = `${list.length} products`;
+
+      if (!list.length) {
+        document.getElementById("productGrid").innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <i class="fa-solid fa-box-open"></i>
+            <h3>No products found</h3>
+            <p>Try adjusting your filters</p>
+          </div>`;
+        return;
+      }
+
+      document.getElementById("productGrid").innerHTML = list.map(p => {
+        const stars = "★".repeat(Math.floor(p.rating)) + "☆".repeat(5 - Math.floor(p.rating));
+        const wished = isWishlisted(p.id);
+        const stockLabel = p.stock <= 5 ? `<p class="product-stock low">Only ${p.stock} left!</p>` : `<p class="product-stock">In Stock</p>`;
+        return `
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img class="product-img" src="${p.image}" alt="${p.name}" loading="lazy"/>
+              <button class="wish-btn ${wished ? 'active' : ''}" onclick="handleWish(${p.id}, this)" title="Wishlist">
+                <i class="fa-${wished ? 'solid' : 'regular'} fa-heart"></i>
+              </button>
+            </div>
+            <div class="product-info">
+              <p class="product-cat">${p.category}</p>
+              <h3 class="product-name">${p.name}</h3>
+              <p class="product-rating">${stars} <span>(${p.rating})</span></p>
+              <p class="product-price">₹${p.price}</p>
+              ${stockLabel}
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-outline btn-sm" onclick="window.location.href='product.html?id=${p.id}'">Details</button>
+              <button class="btn btn-primary btn-sm" onclick="handleAddCart(${p.id}, this)"><i class="fa-solid fa-cart-plus"></i> Add</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function handleAddCart(id, btn) {
+      addToCart(id);
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Added';
+      btn.style.background = "var(--green)";
+      btn.style.color = "white";
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i> Add';
+        btn.style.background = "";
+        btn.style.color = "";
+      }, 1500);
+      showToast("Added to cart!", "success");
+    }
+
+    function handleWish(id, btn) {
+      toggleWishlist(id);
+      const wished = isWishlisted(id);
+      btn.className = `wish-btn ${wished ? 'active' : ''}`;
+      btn.innerHTML = `<i class="fa-${wished ? 'solid' : 'regular'} fa-heart"></i>`;
+      showToast(wished ? "Added to wishlist!" : "Removed from wishlist", wished ? "success" : "");
+      if (showWishlist) renderProducts();
+    }
+
+    function toggleWishlistFilter() {
+      showWishlist = !showWishlist;
+      const btn = document.getElementById("wishBtn");
+      btn.innerHTML = showWishlist
+        ? '<i class="fa-solid fa-heart"></i> All Products'
+        : '<i class="fa-solid fa-heart"></i> Show Wishlist';
+      renderProducts();
+    }
+
+    function showToast(msg, type = "") {
+      const t = document.createElement("div");
+      t.className = `toast ${type}`;
+      t.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check' : 'info'}-circle"></i> ${msg}`;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    // Event listeners
+    document.getElementById("catList").addEventListener("click", e => {
+      const li = e.target.closest("li");
+      if (!li) return;
+      document.querySelectorAll(".cat-list li").forEach(i => i.classList.remove("active"));
+      li.classList.add("active");
+      activeCat = li.dataset.cat;
+      renderProducts();
+    });
+
+    document.getElementById("priceRange").addEventListener("input", e => {
+      maxPrice = +e.target.value;
+      document.getElementById("priceVal").textContent = maxPrice;
+      renderProducts();
+    });
+
+    document.getElementById("searchInput").addEventListener("input", e => {
+      searchQ = e.target.value;
+      renderProducts();
+    });
+
+    document.getElementById("sortSelect").addEventListener("change", e => {
+      sortBy = e.target.value;
+      renderProducts();
+    });
+
+    renderProducts();
+  </script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ShopEase — Cart</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    .container { max-width: 1100px; margin: 36px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 360px; gap: 28px; }
+
+    /* Cart Items */
+    .cart-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .cart-header-row h2 { font-size: 1.4rem; color: var(--dark); }
+    .cart-header-row a { font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+    .cart-item { display: flex; gap: 16px; align-items: center; background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
+    .cart-item img { width: 90px; height: 90px; object-fit: cover; border-radius: 10px; flex-shrink: 0; }
+    .item-info { flex: 1; }
+    .item-info h3 { font-size: 1rem; color: var(--dark); margin-bottom: 4px; }
+    .item-info .cat { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .item-info .price { font-size: 1rem; font-weight: 700; color: var(--red); margin-top: 6px; }
+
+    .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    .qty-ctrl { display: flex; align-items: center; border: 2px solid #e8e8e8; border-radius: 10px; overflow: hidden; }
+    .qty-ctrl button { width: 34px; height: 34px; border: none; background: none; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+    .qty-ctrl button:hover { background: #f0f0f0; }
+    .qty-ctrl span { min-width: 36px; text-align: center; font-weight: 600; font-size: 0.95rem; }
+    .remove-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; transition: color 0.2s; }
+    .remove-btn:hover { color: var(--red); }
+
+    /* Summary Card */
+    .summary-card { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); height: fit-content; position: sticky; top: 80px; }
+    .summary-card h3 { font-size: 1.1rem; color: var(--dark); margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid #f0f0f0; }
+    .summary-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: #555; margin-bottom: 10px; }
+    .summary-row.total { font-size: 1.1rem; font-weight: 700; color: var(--dark); border-top: 2px solid #f0f0f0; padding-top: 14px; margin-top: 8px; }
+    .summary-row .free { color: var(--green); font-weight: 600; }
+
+    /* Checkout Steps */
+    #checkoutSection { display: none; }
+    .steps { display: flex; gap: 0; margin-bottom: 28px; }
+    .step { flex: 1; text-align: center; position: relative; }
+    .step-circle { width: 32px; height: 32px; border-radius: 50%; background: #e8e8e8; color: #aaa; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; margin: 0 auto 6px; transition: all 0.3s; }
+    .step.active .step-circle { background: var(--dark); color: var(--accent); }
+    .step.done .step-circle { background: var(--green); color: white; }
+    .step-label { font-size: 0.75rem; color: var(--muted); }
+    .step.active .step-label { color: var(--dark); font-weight: 600; }
+    .step-line { position: absolute; top: 16px; left: 50%; width: 100%; height: 2px; background: #e8e8e8; z-index: -1; }
+    .step:last-child .step-line { display: none; }
+
+    .step-content { display: none; }
+    .step-content.active { display: block; }
+
+    .success-screen { text-align: center; padding: 40px 20px; }
+    .success-screen i { font-size: 4rem; color: var(--green); margin-bottom: 16px; display: block; }
+    .success-screen h2 { font-size: 1.6rem; color: var(--dark); margin-bottom: 8px; }
+    .success-screen p { color: var(--muted); margin-bottom: 24px; }
+    .order-id { background: #f4f5f7; padding: 10px 20px; border-radius: 10px; font-family: monospace; font-size: 1rem; display: inline-block; margin-bottom: 24px; color: var(--dark); }
+
+    @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="shop.html" class="nav-logo"><i class="fa-solid fa-bag-shopping"></i> ShopEase</a>
+    <div class="nav-links">
+      <a href="shop.html"><i class="fa-solid fa-store"></i> <span>Shop</span></a>
+      <a href="cart.html" class="active nav-cart"><i class="fa-solid fa-cart-shopping"></i> <span>Cart</span> <span id="cartBadge">0</span></a>
+      <a href="orders.html"><i class="fa-solid fa-box"></i> <span>Orders</span></a>
+      <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <div class="container" id="mainContainer">
+    <!-- LEFT: Cart Items -->
+    <div>
+      <div class="cart-header-row">
+        <h2>Your Cart (<span id="itemCount">0</span> items)</h2>
+        <a href="shop.html"><i class="fa-solid fa-arrow-left"></i> Continue Shopping</a>
+      </div>
+      <div id="cartItemsEl"></div>
+    </div>
+
+    <!-- RIGHT: Summary -->
+    <div>
+      <div class="summary-card" id="summaryCard">
+        <h3>Order Summary</h3>
+        <div class="summary-row"><span>Subtotal</span><span id="subtotal">₹0</span></div>
+        <div class="summary-row"><span>Shipping</span><span class="free" id="shippingEl">FREE</span></div>
+        <div class="summary-row"><span>Tax (18% GST)</span><span id="taxEl">₹0</span></div>
+        <div class="summary-row total"><span>Total</span><span id="grandTotal">₹0</span></div>
+        <button class="btn btn-accent btn-full" style="margin-top:20px" onclick="startCheckout()" id="checkoutBtn">
+          <i class="fa-solid fa-lock"></i> Proceed to Checkout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT FLOW (replaces main container) -->
+  <div id="checkoutSection" style="max-width:700px;margin:36px auto;padding:0 20px">
+    <div class="steps">
+      <div class="step active" id="step1"><div class="step-circle">1</div><div class="step-label">Address</div><div class="step-line"></div></div>
+      <div class="step" id="step2"><div class="step-circle">2</div><div class="step-label">Payment</div><div class="step-line"></div></div>
+      <div class="step" id="step3"><div class="step-circle">3</div><div class="step-label">Confirm</div><div class="step-line"></div></div>
+    </div>
+
+    <!-- Step 1: Address -->
+    <div class="step-content active card" id="addressStep" style="padding:28px">
+      <h3 style="margin-bottom:20px;color:var(--dark)">Delivery Address</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group"><label>Full Name</label><input id="addrName" placeholder="Your name"/></div>
+        <div class="form-group"><label>Phone</label><input id="addrPhone" placeholder="10-digit number"/></div>
+      </div>
+      <div class="form-group"><label>Address Line</label><input id="addrLine" placeholder="House no, street, area"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div class="form-group"><label>City</label><input id="addrCity" placeholder="City"/></div>
+        <div class="form-group"><label>State</label><input id="addrState" placeholder="State"/></div>
+        <div class="form-group"><label>Pincode</label><input id="addrPin" placeholder="6-digit"/></div>
+      </div>
+      <button class="btn btn-primary" onclick="goToPayment()">Continue to Payment <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+
+    <!-- Step 2: Payment -->
+    <div class="step-content card" id="paymentStep" style="padding:28px;display:none">
+      <h3 style="margin-bottom:20px;color:var(--dark)">Payment Method</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">
+        <label style="display:flex;align-items:center;gap:12px;padding:14px;border:2px solid #e8e8e8;border-radius:12px;cursor:pointer" id="upiOpt">
+          <input type="radio" name="payment" value="upi" checked onchange="showPayOpt('upi')"/>
+          <i class="fa-solid fa-mobile-screen" style="color:#5f259f;font-size:1.2rem"></i>
+          <div><strong>UPI</strong><p style="font-size:0.8rem;color:var(--muted)">Pay via GPay, PhonePe, Paytm</p></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:12px;padding:14px;border:2px solid #e8e8e8;border-radius:12px;cursor:pointer">
+          <input type="radio" name="payment" value="card" onchange="showPayOpt('card')"/>
+          <i class="fa-solid fa-credit-card" style="color:#0066cc;font-size:1.2rem"></i>
+          <div><strong>Credit / Debit Card</strong><p style="font-size:0.8rem;color:var(--muted)">Visa, Mastercard, RuPay</p></div>
+        </label>
+        <label style="display:flex;align-items:center;gap:12px;padding:14px;border:2px solid #e8e8e8;border-radius:12px;cursor:pointer">
+          <input type="radio" name="payment" value="cod" onchange="showPayOpt('cod')"/>
+          <i class="fa-solid fa-money-bill-wave" style="color:var(--green);font-size:1.2rem"></i>
+          <div><strong>Cash on Delivery</strong><p style="font-size:0.8rem;color:var(--muted)">Pay when you receive</p></div>
+        </label>
+      </div>
+      <div id="upiFields"><div class="form-group"><label>UPI ID</label><input id="upiId" placeholder="yourname@upi"/></div></div>
+      <div id="cardFields" style="display:none">
+        <div class="form-group"><label>Card Number</label><input id="cardNum" placeholder="1234 5678 9012 3456" maxlength="19"/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group"><label>Expiry</label><input id="cardExp" placeholder="MM/YY"/></div>
+          <div class="form-group"><label>CVV</label><input id="cardCvv" placeholder="123" maxlength="3" type="password"/></div>
+        </div>
+      </div>
+      <div id="codFields" style="display:none"><p style="color:var(--muted);font-size:0.9rem;padding:12px;background:#f9f9f9;border-radius:10px">₹50 extra charge applies for COD orders.</p></div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="btn btn-outline" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn btn-primary" onclick="goToConfirm()">Review Order <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Step 3: Confirm -->
+    <div class="step-content card" id="confirmStep" style="padding:28px;display:none">
+      <h3 style="margin-bottom:20px;color:var(--dark)">Review & Place Order</h3>
+      <div id="confirmSummary"></div>
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button class="btn btn-outline" onclick="goBack2()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn btn-accent" style="flex:1" onclick="placeOrderNow()"><i class="fa-solid fa-check"></i> Place Order</button>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div class="step-content card" id="successStep" style="display:none">
+      <div class="success-screen">
+        <i class="fa-solid fa-circle-check"></i>
+        <h2>Order Placed Successfully!</h2>
+        <p>Thank you for shopping with ShopEase. Your order is confirmed.</p>
+        <div class="order-id" id="orderId"></div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a href="orders.html" class="btn btn-primary">View My Orders</a>
+          <a href="shop.html" class="btn btn-accent">Continue Shopping</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+    updateCartBadge();
+
+    let addrData = {}, payData = {};
+    let currentStep = 1;
+
+    function renderCart() {
+      const cart = getCart();
+      const count = getCartCount();
+      document.getElementById("itemCount").textContent = count;
+
+      if (!cart.length) {
+        document.getElementById("cartItemsEl").innerHTML = `
+          <div class="empty-state">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <h3>Your cart is empty</h3>
+            <p>Add some products first</p>
+            <a href="shop.html" class="btn btn-primary">Go Shopping</a>
+          </div>`;
+        document.getElementById("checkoutBtn").disabled = true;
+        document.getElementById("checkoutBtn").style.opacity = "0.5";
+      } else {
+        document.getElementById("cartItemsEl").innerHTML = cart.map(item => {
+          const p = PRODUCTS.find(p => p.id === item.id);
+          if (!p) return "";
+          return `
+            <div class="cart-item">
+              <img src="${p.image}" alt="${p.name}"/>
+              <div class="item-info">
+                <p class="cat">${p.category}</p>
+                <h3>${p.name}</h3>
+                <p class="price">₹${p.price * item.qty} <span style="font-size:0.8rem;color:var(--muted);font-weight:400">(₹${p.price} each)</span></p>
+              </div>
+              <div class="item-right">
+                <div class="qty-ctrl">
+                  <button onclick="handleQty(${p.id}, -1)">−</button>
+                  <span>${item.qty}</span>
+                  <button onclick="handleQty(${p.id}, 1)">+</button>
+                </div>
+                <button class="remove-btn" onclick="handleRemove(${p.id})"><i class="fa-solid fa-trash"></i> Remove</button>
+              </div>
+            </div>`;
+        }).join("");
+      }
+
+      // Summary
+      const subtotal = getCartTotal();
+      const tax = Math.round(subtotal * 0.18);
+      const grand = subtotal + tax;
+      document.getElementById("subtotal").textContent = `₹${subtotal}`;
+      document.getElementById("taxEl").textContent = `₹${tax}`;
+      document.getElementById("grandTotal").textContent = `₹${grand}`;
+    }
+
+    function handleQty(id, d) { changeQty(id, d); renderCart(); }
+    function handleRemove(id) { removeFromCart(id); renderCart(); }
+
+    function startCheckout() {
+      if (!getCartCount()) return;
+      document.getElementById("mainContainer").style.display = "none";
+      document.getElementById("checkoutSection").style.display = "block";
+    }
+
+    function goToPayment() {
+      const name  = document.getElementById("addrName").value.trim();
+      const phone = document.getElementById("addrPhone").value.trim();
+      const line  = document.getElementById("addrLine").value.trim();
+      const city  = document.getElementById("addrCity").value.trim();
+      const state = document.getElementById("addrState").value.trim();
+      const pin   = document.getElementById("addrPin").value.trim();
+      if (!name || !phone || !line || !city || !state || !pin) return alert("Please fill in all address fields.");
+      addrData = { name, phone, line, city, state, pin };
+      setStep(2);
+    }
+
+    function goToConfirm() {
+      const method = document.querySelector('input[name="payment"]:checked').value;
+      payData = { method };
+      const subtotal = getCartTotal();
+      const tax = Math.round(subtotal * 0.18);
+      const grand = subtotal + tax;
+      document.getElementById("confirmSummary").innerHTML = `
+        <div style="background:#f9f9f9;border-radius:12px;padding:16px;margin-bottom:16px">
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Delivery To</p>
+          <strong>${addrData.name}</strong> · ${addrData.phone}<br/>
+          <span style="color:#555">${addrData.line}, ${addrData.city}, ${addrData.state} — ${addrData.pin}</span>
+        </div>
+        <div style="background:#f9f9f9;border-radius:12px;padding:16px;margin-bottom:16px">
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Payment</p>
+          <strong>${method.toUpperCase()}</strong>
+        </div>
+        <div style="background:#f9f9f9;border-radius:12px;padding:16px">
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Order Total</p>
+          <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>₹${subtotal}</span></div>
+          <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>₹${tax}</span></div>
+          <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;margin-top:8px;padding-top:8px;border-top:2px solid #e8e8e8"><span>Total</span><span style="color:var(--red)">₹${grand}</span></div>
+        </div>`;
+      setStep(3);
+    }
+
+    function placeOrderNow() {
+      const order = placeOrder({ address: addrData, payment: payData });
+      document.getElementById("orderId").textContent = order.id;
+      setStep(4);
+      updateCartBadge();
+    }
+
+    function goBack()  { setStep(1); }
+    function goBack2() { setStep(2); }
+
+    function setStep(n) {
+      currentStep = n;
+      const steps = ["addressStep", "paymentStep", "confirmStep", "successStep"];
+      steps.forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.style.display = i === n - 1 ? "block" : "none";
+      });
+      [1,2,3].forEach(i => {
+        const el = document.getElementById(`step${i}`);
+        if (!el) return;
+        el.className = `step${i < n ? ' done' : i === n ? ' active' : ''}`;
+      });
+    }
+
+    function showPayOpt(opt) {
+      document.getElementById("upiFields").style.display  = opt === "upi"  ? "block" : "none";
+      document.getElementById("cardFields").style.display = opt === "card" ? "block" : "none";
+      document.getElementById("codFields").style.display  = opt === "cod"  ? "block" : "none";
+    }
+
+    renderCart();
+  </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ShopEase — My Orders</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    .container { max-width: 860px; margin: 36px auto; padding: 0 20px; }
+    .order-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+    .order-card-header { padding: 16px 22px; background: #f9f9f9; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .order-id { font-family: monospace; font-size: 0.9rem; color: var(--dark); font-weight: 600; }
+    .order-date { font-size: 0.85rem; color: var(--muted); }
+    .order-items { padding: 16px 22px; display: flex; flex-direction: column; gap: 12px; }
+    .order-item { display: flex; gap: 14px; align-items: center; }
+    .order-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; }
+    .order-item-info h4 { font-size: 0.95rem; color: var(--dark); }
+    .order-item-info p { font-size: 0.85rem; color: var(--muted); }
+    .order-card-footer { padding: 14px 22px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .order-total { font-size: 1rem; font-weight: 700; color: var(--dark); }
+    .page-title { font-size: 1.6rem; color: var(--dark); margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="shop.html" class="nav-logo"><i class="fa-solid fa-bag-shopping"></i> ShopEase</a>
+    <div class="nav-links">
+      <a href="shop.html"><i class="fa-solid fa-store"></i> <span>Shop</span></a>
+      <a href="cart.html" class="nav-cart"><i class="fa-solid fa-cart-shopping"></i> <span>Cart</span> <span id="cartBadge">0</span></a>
+      <a href="orders.html" class="active"><i class="fa-solid fa-box"></i> <span>Orders</span></a>
+      <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2 class="page-title"><i class="fa-solid fa-box"></i> My Orders</h2>
+    <div id="ordersList"></div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+    updateCartBadge();
+
+    const orders = getOrders().sort((a,b) => b.timestamp - a.timestamp);
+
+    if (!orders.length) {
+      document.getElementById("ordersList").innerHTML = `
+        <div class="empty-state">
+          <i class="fa-solid fa-box-open"></i>
+          <h3>No orders yet</h3>
+          <p>Place your first order to see it here</p>
+          <a href="shop.html" class="btn btn-primary">Start Shopping</a>
+        </div>`;
+    } else {
+      document.getElementById("ordersList").innerHTML = orders.map(order => {
+        const date = new Date(order.timestamp).toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+        const itemsHtml = order.items.map(item => {
+          const p = PRODUCTS.find(p => p.id === item.id);
+          if (!p) return "";
+          return `
+            <div class="order-item">
+              <img src="${p.image}" alt="${p.name}"/>
+              <div class="order-item-info">
+                <h4>${p.name}</h4>
+                <p>Qty: ${item.qty} · ₹${p.price * item.qty}</p>
+              </div>
+            </div>`;
+        }).join("");
+
+        return `
+          <div class="order-card">
+            <div class="order-card-header">
+              <div>
+                <div class="order-id">${order.id}</div>
+                <div class="order-date">${date}</div>
+              </div>
+              <span class="badge badge-green">${order.status}</span>
+            </div>
+            <div class="order-items">${itemsHtml}</div>
+            <div class="order-card-footer">
+              <span style="font-size:0.85rem;color:var(--muted)">Payment: ${order.payment?.method?.toUpperCase() || "N/A"}</span>
+              <span class="order-total">Total: ₹${order.total + Math.round(order.total * 0.18)}</span>
+            </div>
+          </div>`;
+      }).join("");
+    }
+  </script>
+</body>
+</html>
